@@ -1,0 +1,54 @@
+create table User(
+id int primary key,
+name varchar(40) not null,
+password varchar(10) not null,
+role enum('Admin', 'Chef', 'Employee') not null);
+
+
+create table MenuItem(
+itemId int primary key,
+itemName varchar(20) not null,
+price double not null,
+mealType enum('Breakfast', 'Lunch', 'Dinner') not null,
+isAvailable boolean not null
+);
+
+
+create table Notification(
+employeeId int,
+message varchar(50),
+foreign key (employeeId) references User(id) on delete cascade
+);
+
+
+create table Feedback(
+employeeId int,
+itemId int,
+rating double not null,
+comment varchar(30) not null,
+momRecipe varchar(30) not null,
+foreign key (employeeId) references User(id) on delete cascade,
+foreign key (itemId) references MenuItem(itemId) on delete cascade,
+primary key(employeeId, itemId)
+);
+
+
+create table DailyMenuItem(
+dailyMenuItemId date,
+itemId int,
+mealType enum('Breakfast', 'Lunch', 'Dinner'),
+foreign key (itemId) references MenuItem(itemId) on delete cascade,
+primary key (dailyMenuItemId, itemId, mealType)
+);
+
+
+create table VoteDailyMenuItem(
+dailyMenuItemId date,
+itemId int,
+employeeId int,
+mealType enum('BreakFast', 'Lunch', 'Dinner'),
+foreign key (itemId) references MenuItem(itemId) on delete cascade,
+foreign key (dailyMenuItemId) references DailyMenuItem(dailyMenuItemId) on delete cascade,
+foreign key (employeeId) references User(id) on delete cascade,
+primary key (dailyMenuItemId, itemId, employeeId)
+);
