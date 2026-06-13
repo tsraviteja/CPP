@@ -6,7 +6,7 @@ find_package(CURL REQUIRED)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/inc
                     ${CMAKE_CURRENT_SOURCE_DIR}/pub
-                    ${CMAKE_CURRENT_SOURCE_DIR}/../.lib)
+                    ${CMAKE_CURRENT_SOURCE_DIR}/.lib)
 
 add_executable(RequestAPI src/main.cpp
                           src/Request.cpp)

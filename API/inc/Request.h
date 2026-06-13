@@ -50,7 +50,7 @@ public:
                                            std::string *storeResponseData);
 
 private:
-    CURL *curl;
-    std::string serverResponse;
+    CURL *curl_;
+    std::string serverResponse_;
 };
 }
