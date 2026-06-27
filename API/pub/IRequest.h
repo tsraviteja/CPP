@@ -58,4 +58,4 @@ public:
     virtual std::pair<int, json> delete$(const char *url) = 0;
 };
 
-}
+} // namespace API

@@ -17,4 +17,4 @@ namespace API
     };
 
     typedef nlohmann::json json;
-};
+}; // namespace API

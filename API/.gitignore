@@ -3,3 +3,7 @@
 
 # .lib files
 .lib/
+
+# .node modules files
+.node_modules/
+
