@@ -1,3 +1,9 @@
+/**********************************************************
+ * @file IMockRequest.h
+ * @brief Mock request class header file for testing API request operations.
+ * @date  27-06-2026
+ **********************************************************/
+
 #pragma once
 
 #include <gmock/gmock.h>

@@ -1,6 +1,13 @@
+/**********************************************************
+ * @file Request.h
+ * @brief Request class header file to perform the API request operations.
+ * @date  27-06-2026
+ **********************************************************/
+
 #pragma once
 
 #include <curl/curl.h>
+#include <mutex>
 
 #include "IRequest.h"
 
@@ -52,5 +59,6 @@ public:
 private:
     CURL *curl_;
     std::string serverResponse_;
+    std::mutex curlMutex_;
 };
-}
+} // namespace API

@@ -10,7 +10,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/inc
                     ${CMAKE_CURRENT_SOURCE_DIR}/.lib)
 
 add_executable(RequestGtest test/RequestGtest.cpp
-                             src/Request.cpp)
+                            src/Request.cpp)
 
 target_link_libraries(RequestGtest PRIVATE 
     CURL::libcurl

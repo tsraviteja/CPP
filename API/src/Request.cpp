@@ -1,6 +1,16 @@
+/**********************************************************
+ * @file Request.cpp
+ * @brief Request class implementation file to perform the API request operations.
+ * @date  27-06-2026
+ **********************************************************/
+
 #include "Request.h"
 
 namespace API {
+
+//***************************************************/
+//******** Request constructor & destructor *********/
+//***************************************************/
 
 Request::Request()
 {
@@ -17,34 +27,13 @@ Request::~Request()
     curl_global_cleanup();
 }
 
-bool Request::initializeServer()
-{
-    auto result = false;
-    curl_global_init(CURL_GLOBAL_ALL);
-    curl_ = curl_easy_init();
-    if (curl_)
-    {
-        result = true;
-    }
-    return result;
-}
-
-void Request::clearServerResponse()
-{
-    serverResponse_.clear();
-}
-
-size_t Request::storeReponseDataOfServer(char *serverResponse_,
-                                         size_t sizeOfDataElement,
-                                         size_t numberOfDataMember,
-                                         std::string *storeResponseData)
-{
-    storeResponseData->append(serverResponse_, (sizeOfDataElement * numberOfDataMember));
-    return (sizeOfDataElement * numberOfDataMember);
-}
+//***************************************************/
+//************ iRequest Public methods **************/
+//***************************************************/
 
 std::pair<int, json> Request::get(const char *url)
 {
+    std::lock_guard<std::mutex> lock(curlMutex_);
     std::pair<int, json> response;
     response.second = {
         {"body", {}},
@@ -85,6 +74,7 @@ std::pair<int, json> Request::get(const char *url)
 
 std::pair<int, json> Request::post(const char *url, const std::string &requestBody)
 {
+    std::lock_guard<std::mutex> lock(curlMutex_);
     std::pair<int, json> response;
     response.second = {
         {"body", {}},
@@ -137,6 +127,7 @@ std::pair<int, json> Request::post(const char *url, const std::string &requestBo
 
 std::pair<int, json> Request::patch(const char *url, const std::string &requestBody)
 {
+    std::lock_guard<std::mutex> lock(curlMutex_);
     std::pair<int, json> response;
     response.second = {
         {"body", {}},
@@ -189,6 +180,7 @@ std::pair<int, json> Request::patch(const char *url, const std::string &requestB
 
 std::pair<int, json> Request::put(const char *url, const std::string &requestBody)
 {
+    std::lock_guard<std::mutex> lock(curlMutex_);
     std::pair<int, json> response;
     response.second = {
         {"body", {}},
@@ -241,6 +233,7 @@ std::pair<int, json> Request::put(const char *url, const std::string &requestBod
 
 std::pair<int, json> Request::delete$(const char *url)
 {
+    std::lock_guard<std::mutex> lock(curlMutex_);
     std::pair<int, json> response;
     response.second = {
         {"body", {}},
@@ -285,6 +278,36 @@ std::pair<int, json> Request::delete$(const char *url)
         }
     }
     return response;
+}
+
+//***************************************************/
+//************ Request Public methods ***************/
+//***************************************************/
+
+bool Request::initializeServer()
+{
+    auto result = false;
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl_ = curl_easy_init();
+    if (curl_)
+    {
+        result = true;
+    }
+    return result;
+}
+
+void Request::clearServerResponse()
+{
+    serverResponse_.clear();
+}
+
+size_t Request::storeReponseDataOfServer(char *serverResponse_,
+                                         size_t sizeOfDataElement,
+                                         size_t numberOfDataMember,
+                                         std::string *storeResponseData)
+{
+    storeResponseData->append(serverResponse_, (sizeOfDataElement * numberOfDataMember));
+    return (sizeOfDataElement * numberOfDataMember);
 }
 
 } // namespace API
