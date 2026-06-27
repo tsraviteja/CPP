@@ -32,16 +32,15 @@ public:
     std::pair<int, json> put(const char *url, const std::string & requestBody) override;
     std::pair<int, json> delete$(const char *url) override;
 
+    /**
+     * @brief clear server response.
+     */
+    void clearServerResponse();
 
     /**
      * @brief initalizes the curl.
      */
     bool initializeServer();
-
-    /**
-     * @brief clear server response.
-     */
-    void clearServerResponse();
 
     /**
      * @brief Call back method to store the response.
@@ -58,7 +57,7 @@ public:
 
 private:
     CURL *curl_;
-    std::string serverResponse_;
     std::mutex curlMutex_;
+    std::string serverResponse_;
 };
 } // namespace API

@@ -284,6 +284,11 @@ std::pair<int, json> Request::delete$(const char *url)
 //************ Request Public methods ***************/
 //***************************************************/
 
+void Request::clearServerResponse()
+{
+    serverResponse_.clear();
+}
+
 bool Request::initializeServer()
 {
     auto result = false;
@@ -294,11 +299,6 @@ bool Request::initializeServer()
         result = true;
     }
     return result;
-}
-
-void Request::clearServerResponse()
-{
-    serverResponse_.clear();
 }
 
 size_t Request::storeReponseDataOfServer(char *serverResponse_,
