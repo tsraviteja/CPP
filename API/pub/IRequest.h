@@ -1,3 +1,9 @@
+/**********************************************************
+ * @file IRequest.h
+ * @brief IRequest class header file to define the interface for API request operations.
+ * @date  27-06-2026
+ **********************************************************/
+
 #pragma once
 
 #include <iostream>
@@ -58,4 +64,4 @@ public:
     virtual std::pair<int, json> delete$(const char *url) = 0;
 };
 
-}
+} // namespace API

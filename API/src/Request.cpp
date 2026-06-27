@@ -1,50 +1,39 @@
+/**********************************************************
+ * @file Request.cpp
+ * @brief Request class implementation file to perform the API request operations.
+ * @date  27-06-2026
+ **********************************************************/
+
 #include "Request.h"
 
 namespace API {
+
+//***************************************************/
+//******** Request constructor & destructor *********/
+//***************************************************/
 
 Request::Request()
 {
     if (initializeServer())
     {
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, storeReponseDataOfServer);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &serverResponse);
+        curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, storeReponseDataOfServer);
+        curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &serverResponse_);
     }
 }
 
 Request::~Request()
 {
-    curl_easy_cleanup(curl);
+    curl_easy_cleanup(curl_);
     curl_global_cleanup();
 }
 
-bool Request::initializeServer()
-{
-    auto result = false;
-    curl_global_init(CURL_GLOBAL_ALL);
-    curl = curl_easy_init();
-    if (curl)
-    {
-        result = true;
-    }
-    return result;
-}
-
-void Request::clearServerResponse()
-{
-    serverResponse.clear();
-}
-
-size_t Request::storeReponseDataOfServer(char *serverResponse,
-                                         size_t sizeOfDataElement,
-                                         size_t numberOfDataMember,
-                                         std::string *storeResponseData)
-{
-    storeResponseData->append(serverResponse, (sizeOfDataElement * numberOfDataMember));
-    return (sizeOfDataElement * numberOfDataMember);
-}
+//***************************************************/
+//************ iRequest Public methods **************/
+//***************************************************/
 
 std::pair<int, json> Request::get(const char *url)
 {
+    std::lock_guard<std::mutex> lock(curlMutex_);
     std::pair<int, json> response;
     response.second = {
         {"body", {}},
@@ -54,21 +43,24 @@ std::pair<int, json> Request::get(const char *url)
     response.first = StatusCode::SERVICE_UNAVAILABLE;
     response.second["errorMessage"] = "Service Unavailable!";
 
-    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
-    curl_easy_setopt(curl, CURLOPT_URL, url);
+    clearServerResponse();
+
+    curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "GET");
+    curl_easy_setopt(curl_, CURLOPT_URL, url);
 
     CURLcode curlCode;
-    int statusCode;
+    long statusCode = 0;
 
-    curlCode = curl_easy_perform(curl);
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &statusCode);
+    curlCode = curl_easy_perform(curl_);
+    curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &statusCode);
 
     if (curlCode == CURLE_OK)
     {
         if (statusCode == StatusCode::OK)
         {
             response.first = StatusCode::OK;
-            response.second = json::parse(serverResponse);
+            response.second["body"] = json::parse(serverResponse_);
+            response.second["errorMessage"].clear();
             clearServerResponse();
         }
         else
@@ -82,6 +74,7 @@ std::pair<int, json> Request::get(const char *url)
 
 std::pair<int, json> Request::post(const char *url, const std::string &requestBody)
 {
+    std::lock_guard<std::mutex> lock(curlMutex_);
     std::pair<int, json> response;
     response.second = {
         {"body", {}},
@@ -95,27 +88,31 @@ std::pair<int, json> Request::post(const char *url, const std::string &requestBo
 
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Content-Type: application/json");
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, headers);
 
-    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, requestBody.c_str());
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, requestBody.size());
+    curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "POST");
+    curl_easy_setopt(curl_, CURLOPT_URL, url);
+    curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, requestBody.c_str());
+    curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, requestBody.size());
 
     CURLcode curlCode;
     long statusCode = 0;
 
-    curlCode = curl_easy_perform(curl);
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &statusCode);
+    curlCode = curl_easy_perform(curl_);
+    curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &statusCode);
 
     curl_slist_free_all(headers);
+    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, NULL);
+    curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, NULL);
+    curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, 0);
 
     if (curlCode == CURLE_OK)
     {
         if (statusCode == StatusCode::OK || statusCode == StatusCode::CREATED)
         {
             response.first = statusCode;
-            response.second = json::parse(serverResponse);
+            response.second["body"] = json::parse(serverResponse_);
+            response.second["errorMessage"].clear();
             clearServerResponse();
         }
         else
@@ -130,6 +127,7 @@ std::pair<int, json> Request::post(const char *url, const std::string &requestBo
 
 std::pair<int, json> Request::patch(const char *url, const std::string &requestBody)
 {
+    std::lock_guard<std::mutex> lock(curlMutex_);
     std::pair<int, json> response;
     response.second = {
         {"body", {}},
@@ -143,20 +141,23 @@ std::pair<int, json> Request::patch(const char *url, const std::string &requestB
 
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Content-Type: application/json");
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, headers);
 
-    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, requestBody.c_str());
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, requestBody.size());
+    curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "PATCH");
+    curl_easy_setopt(curl_, CURLOPT_URL, url);
+    curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, requestBody.c_str());
+    curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, requestBody.size());
 
     CURLcode curlCode;
     long statusCode = 0;
 
-    curlCode = curl_easy_perform(curl);
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &statusCode);
+    curlCode = curl_easy_perform(curl_);
+    curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &statusCode);
 
     curl_slist_free_all(headers);
+    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, NULL);
+    curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, NULL);
+    curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, 0);
 
     if (curlCode == CURLE_OK)
     {
@@ -164,7 +165,8 @@ std::pair<int, json> Request::patch(const char *url, const std::string &requestB
         if (statusCode == StatusCode::OK)
         {
             response.first = StatusCode::OK;
-            response.second = json::parse(serverResponse);
+            response.second["body"] = json::parse(serverResponse_);
+            response.second["errorMessage"].clear();
             clearServerResponse();
         }
         else
@@ -178,6 +180,7 @@ std::pair<int, json> Request::patch(const char *url, const std::string &requestB
 
 std::pair<int, json> Request::put(const char *url, const std::string &requestBody)
 {
+    std::lock_guard<std::mutex> lock(curlMutex_);
     std::pair<int, json> response;
     response.second = {
         {"body", {}},
@@ -191,20 +194,23 @@ std::pair<int, json> Request::put(const char *url, const std::string &requestBod
 
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Content-Type: application/json");
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, headers);
 
-    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, requestBody.c_str());
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, requestBody.size());
+    curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "PUT");
+    curl_easy_setopt(curl_, CURLOPT_URL, url);
+    curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, requestBody.c_str());
+    curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, requestBody.size());
 
     CURLcode curlCode;
     long statusCode = 0;
 
-    curlCode = curl_easy_perform(curl);
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &statusCode);
+    curlCode = curl_easy_perform(curl_);
+    curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &statusCode);
 
     curl_slist_free_all(headers);
+    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, NULL);
+    curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, NULL);
+    curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, 0);
 
     if (curlCode == CURLE_OK)
     {
@@ -212,7 +218,8 @@ std::pair<int, json> Request::put(const char *url, const std::string &requestBod
         if (statusCode == StatusCode::OK)
         {
             response.first = StatusCode::OK;
-            response.second = json::parse(serverResponse);
+            response.second["body"] = json::parse(serverResponse_);
+            response.second["errorMessage"].clear();
             clearServerResponse();
         }
         else
@@ -226,6 +233,7 @@ std::pair<int, json> Request::put(const char *url, const std::string &requestBod
 
 std::pair<int, json> Request::delete$(const char *url)
 {
+    std::lock_guard<std::mutex> lock(curlMutex_);
     std::pair<int, json> response;
     response.second = {
         {"body", {}},
@@ -239,27 +247,27 @@ std::pair<int, json> Request::delete$(const char *url)
 
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Content-Type: application/json");
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, headers);
 
-    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "DELETE");
+    curl_easy_setopt(curl_, CURLOPT_URL, url);
 
     CURLcode curlCode;
     long statusCode = 0;
-    curlCode = curl_easy_perform(curl);
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &statusCode);
+    curlCode = curl_easy_perform(curl_);
+    curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &statusCode);
 
     curl_slist_free_all(headers);
+    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, NULL);
 
     if (curlCode == CURLE_OK)
     {
-        std::cout << statusCode << std::endl;
         if (statusCode == StatusCode::OK)
         {
             response.first = statusCode;
-            if (!serverResponse.empty())
+            if (!serverResponse_.empty())
             {
-                response.second = json::parse(serverResponse);
+                response.second["body"] = json::parse(serverResponse_);
             }
             clearServerResponse();
         }
@@ -272,4 +280,34 @@ std::pair<int, json> Request::delete$(const char *url)
     return response;
 }
 
+//***************************************************/
+//************ Request Public methods ***************/
+//***************************************************/
+
+void Request::clearServerResponse()
+{
+    serverResponse_.clear();
 }
+
+bool Request::initializeServer()
+{
+    auto result = false;
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl_ = curl_easy_init();
+    if (curl_)
+    {
+        result = true;
+    }
+    return result;
+}
+
+size_t Request::storeReponseDataOfServer(char *serverResponse_,
+                                         size_t sizeOfDataElement,
+                                         size_t numberOfDataMember,
+                                         std::string *storeResponseData)
+{
+    storeResponseData->append(serverResponse_, (sizeOfDataElement * numberOfDataMember));
+    return (sizeOfDataElement * numberOfDataMember);
+}
+
+} // namespace API

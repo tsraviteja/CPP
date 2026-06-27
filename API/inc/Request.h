@@ -1,6 +1,13 @@
+/**********************************************************
+ * @file Request.h
+ * @brief Request class header file to perform the API request operations.
+ * @date  27-06-2026
+ **********************************************************/
+
 #pragma once
 
 #include <curl/curl.h>
+#include <mutex>
 
 #include "IRequest.h"
 
@@ -25,16 +32,15 @@ public:
     std::pair<int, json> put(const char *url, const std::string & requestBody) override;
     std::pair<int, json> delete$(const char *url) override;
 
+    /**
+     * @brief clear server response.
+     */
+    void clearServerResponse();
 
     /**
      * @brief initalizes the curl.
      */
     bool initializeServer();
-
-    /**
-     * @brief clear server response.
-     */
-    void clearServerResponse();
 
     /**
      * @brief Call back method to store the response.
@@ -50,7 +56,8 @@ public:
                                            std::string *storeResponseData);
 
 private:
-    CURL *curl;
-    std::string serverResponse;
+    CURL *curl_;
+    std::mutex curlMutex_;
+    std::string serverResponse_;
 };
-}
+} // namespace API
