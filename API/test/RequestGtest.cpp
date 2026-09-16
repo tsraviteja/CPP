@@ -17,6 +17,7 @@
 #include <thread>
 #include <memory>
 
+using Json = API::Json;
 using Request = API::Request;
 using StatusCode = API::StatusCode;
 
@@ -169,7 +170,7 @@ TEST_F(GivenAnRequest, WhenGetRequestIsCallledWithExistingResource_ThenReturnsSt
     auto response = request_->get(targetUrl.c_str());
     EXPECT_EQ(StatusCode::OK, response.first);
     EXPECT_TRUE(response.second.contains("body"));
-    EXPECT_EQ(API::json::parse(requestBody).dump(), response.second["body"].dump());
+    EXPECT_EQ(Json::parse(requestBody).dump(), response.second["body"].dump());
 }
 
 /************* Tests for post method ***********/
@@ -184,7 +185,7 @@ TEST_F(GivenAnRequest, WhenPostRequestIsCallledWithValidUrlAndBody_ThenReturnsSt
     auto response = request_->post(BASE_URL.c_str(), requestBody);
     EXPECT_EQ(StatusCode::CREATED, response.first);
     EXPECT_TRUE(response.second.contains("body"));
-    EXPECT_EQ(API::json::parse(requestBody).dump(), response.second["body"].dump());
+    EXPECT_EQ(Json::parse(requestBody).dump(), response.second["body"].dump());
 }
 
 TEST_F(GivenAnRequest, WhenPostRequestIsCallledWithInvalidUrl_ThenReturnsStatusCode404)
@@ -236,7 +237,7 @@ TEST_F(GivenAnRequest, WhenPutRequestIsCallledWithValidUrlAndBody_ThenReturnsSta
     auto putResponse = request_->put(targetUrl.c_str(), updatedRequestBody);
     EXPECT_EQ(StatusCode::OK, putResponse.first);
     EXPECT_TRUE(putResponse.second.contains("body"));
-    EXPECT_EQ(API::json::parse(updatedRequestBody).dump(), putResponse.second["body"].dump());
+    EXPECT_EQ(Json::parse(updatedRequestBody).dump(), putResponse.second["body"].dump());
 }
 
 TEST_F(GivenAnRequest, WhenPutRequestIsCallledWithInvalidUrl_ThenReturnsStatusCode404)
