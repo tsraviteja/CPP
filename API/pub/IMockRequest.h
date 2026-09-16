@@ -19,11 +19,11 @@ class IMockRequest : public IRequest
         IMockRequest() {};
         ~IMockRequest() {};
 
-        MOCK_METHOD1(get, std::pair<int, json>(const char *url));
-        MOCK_METHOD2(post, std::pair<int, json>(const char *url, const std::string &requestBody));
-        MOCK_METHOD2(patch, std::pair<int, json>(const char *url, const std::string &requestBody));
-        MOCK_METHOD2(put, std::pair<int, json>(const char *url, const std::string &requestBody));
-        MOCK_METHOD1(delete$, std::pair<int, json>(const char *url));
+        MOCK_METHOD1(get, Response(const char *url));
+        MOCK_METHOD2(post, Response(const char *url, const std::string &requestBody));
+        MOCK_METHOD2(patch, Response(const char *url, const std::string &requestBody));
+        MOCK_METHOD2(put, Response(const char *url, const std::string &requestBody));
+        MOCK_METHOD1(delete$, Response(const char *url));
 };
 
 } // namespace API

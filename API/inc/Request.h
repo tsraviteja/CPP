@@ -26,11 +26,11 @@ public:
      */
     ~Request();
 
-    std::pair<int, json> get(const char *url) override;
-    std::pair<int, json> post(const char *url, const std::string &requestBody) override;
-    std::pair<int, json> patch(const char *url, const std::string & requestBody) override;
-    std::pair<int, json> put(const char *url, const std::string & requestBody) override;
-    std::pair<int, json> delete$(const char *url) override;
+    Response get(const char *url) override;
+    Response post(const char *url, const std::string &requestBody) override;
+    Response patch(const char *url, const std::string & requestBody) override;
+    Response put(const char *url, const std::string & requestBody) override;
+    Response delete$(const char *url) override;
 
     /**
      * @brief clear server response.
@@ -39,6 +39,8 @@ public:
 
     /**
      * @brief initalizes the curl.
+     * 
+     * @return true - if curl is initialized successfully otherwise false.
      */
     bool initializeServer();
 
