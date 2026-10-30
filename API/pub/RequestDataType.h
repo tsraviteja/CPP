@@ -12,7 +12,9 @@
 
 namespace API
 {
-    enum StatusCode
+    typedef nlohmann::json Json;
+
+    enum class StatusCode
     {
         OK = 200,
         CREATED = 201,
@@ -22,5 +24,5 @@ namespace API
         INTERNAL_SERVER_ERROR = 500
     };
 
-    typedef nlohmann::json json;
+    typedef std::pair<StatusCode, Json> Response;
 }; // namespace API
